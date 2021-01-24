@@ -1,0 +1,42 @@
+@ECHO OFF:: BatchGotAdmin
+:-------------------------------------
+REM  --> Check for permissions
+>nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
+
+REM --> If error flag set, we do not have admin.
+if '%errorlevel%' NEQ '0' (
+    echo Requesting administrative privileges...
+    goto UACPrompt
+) else ( goto gotAdmin )
+
+:UACPrompt
+	echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
+	set params = %*:"=""
+    echo UAC.ShellExecute "cmd.exe", "/c %~s0 %params%", "", "runas", 1 >> "%temp%\getadmin.vbs"
+
+    "%temp%\getadmin.vbs"
+    del "%temp%\getadmin.vbs"
+    exit /B
+
+:gotAdmin
+    pushd "%CD%"
+    CD /D "%~dp0"
+:------------------
+
+ECHO Resetting IP Address and Subnet Mask 
+
+SET /P _inputIP= "Please input new IP Address: "
+SET /P _inputSM= "Please input new Subnet Mask: "
+SET /P _inputGW= "Please input new Gate Way: "
+
+ECHO - - - - - - - - - - - -
+ECHO The IP - %_inputIP%
+ECHO The Mask - %_inputSM%
+ECHO The Gateway - %_inputGW%
+ECHO - - - - - - - - - - - -
+
+netsh int ipv4 set address name="Ethernet" source=static address=%_inputIP% mask=%_inputSM% gateway=%_inputGW%
+
+ECHO Here are the new settings for %computername%
+netsh int ip show config
+pause
